@@ -5,8 +5,6 @@ const connectToDatabase = require('../models/db');
 const router = express.Router();
 const dotenv = require('dotenv');
 const pino = require('pino');
-
-// Task 1
 const { body, validationResult } = require('express-validator');
 
 const logger = pino();
@@ -28,7 +26,6 @@ router.post('/register', async (req, res) => {
         const salt = await bcryptjs.genSalt(10);
         const hash = await bcryptjs.hash(req.body.password, salt);
         const email = req.body.email;
-        console.log('email is', email);
 
         const newUser = await collection.insertOne({
             email: req.body.email,
@@ -54,21 +51,20 @@ router.post('/register', async (req, res) => {
 });
 
 router.post('/login', async (req, res) => {
-    console.log("\n\n Inside login")
-
     try {
         const db = await connectToDatabase();
         const collection = db.collection("users");
         const theUser = await collection.findOne({ email: req.body.email });
 
         if (theUser) {
-            let result = await bcryptjs.compare(req.body.password, theUser.password)
+            const result = await bcryptjs.compare(req.body.password, theUser.password);
+
             if (!result) {
                 logger.error('Passwords do not match');
                 return res.status(404).json({ error: 'Wrong pasword' });
             }
 
-            let payload = {
+            const payload = {
                 user: {
                     id: theUser._id.toString(),
                 },
@@ -90,7 +86,6 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// update API
 router.put('/update', async (req, res) => {
     const errors = validationResult(req);
 
@@ -117,18 +112,19 @@ router.put('/update', async (req, res) => {
             return res.status(404).json({ error: "User not found" });
         }
 
-        existingUser.firstName = req.body.name;
-        existingUser.updatedAt = new Date();
-
-        const updatedUser = await collection.findOneAndUpdate(
+        await collection.findOneAndUpdate(
             { email },
-            { $set: existingUser },
-            { returnDocument: 'after' }
+            {
+                $set: {
+                    firstName: req.body.name,
+                    updatedAt: new Date()
+                }
+            }
         );
 
         const payload = {
             user: {
-                id: updatedUser._id.toString(),
+                id: existingUser._id.toString(),
             },
         };
 
