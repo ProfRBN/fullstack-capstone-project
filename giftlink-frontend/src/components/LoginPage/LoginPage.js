@@ -1,13 +1,48 @@
 import React, { useState } from 'react';
 import './LoginPage.css';
+import { urlConfig } from '../../config';
+import { useAppContext } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [errorMessage, setErrorMessage] = useState('');
+
+    const navigate = useNavigate();
+    const { setIsLoggedIn, setUserName } = useAppContext();
 
     const handleLogin = async (e) => {
         e.preventDefault();
-        console.log("Login invoked");
+
+        try {
+            const response = await fetch(`${urlConfig.backendUrl}/api/auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email,
+                    password
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                sessionStorage.setItem('auth-token', data.authtoken);
+                sessionStorage.setItem('name', data.userName);
+                sessionStorage.setItem('email', data.userEmail);
+                setIsLoggedIn(true);
+                setUserName(data.userName);
+                navigate('/app');
+            } else {
+                setErrorMessage(data.error || 'Login failed');
+            }
+        } catch (e) {
+            console.log("Error fetching details: " + e.message);
+            setErrorMessage('Login failed');
+        }
     }
 
     return (
@@ -27,6 +62,7 @@ function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
+                {errorMessage && <div className="text-danger mt-2">{errorMessage}</div>}
               </div>
 
               <div className="mb-4">
