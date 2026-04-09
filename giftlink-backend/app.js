@@ -5,21 +5,18 @@ const cors = require('cors');
 const pinoLogger = require('./logger');
 
 const connectToDatabase = require('./models/db');
-const {loadData} = require("./util/import-mongo/index");
-
+const { loadData } = require("./util/import-mongo/index");
 
 const app = express();
-app.use("*",cors());
 const port = 3060;
+
+app.use(cors());
+app.use(express.json());
 
 // Connect to MongoDB; we just do this one time
 connectToDatabase().then(() => {
     pinoLogger.info('Connected to DB');
-})
-    .catch((e) => console.error('Failed to connect to DB', e));
-
-
-app.use(express.json());
+}).catch((e) => console.error('Failed to connect to DB', e));
 
 // Route files
 const giftRoutes = require('./routes/giftRoutes');
@@ -41,7 +38,7 @@ app.use((err, req, res, next) => {
     res.status(500).send('Internal Server Error');
 });
 
-app.get("/",(req,res)=>{
+app.get("/", (req, res) => {
     res.send("Inside the server");
 });
 
